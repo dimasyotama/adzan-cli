@@ -1,0 +1,12 @@
+Package: adzan
+Version: @VERSION@
+Section: sound
+Priority: optional
+Architecture: @ARCH@
+Maintainer: dimas <dimas@unitesync.com>
+Homepage: https://github.com/dimasyotama/adzan-cli
+Suggests: mpv | ffmpeg | mpg123
+Description: Prayer times and the adhan, in your terminal
+ adzan computes prayer times locally and plays the adhan at the right
+ moment, with a small background daemon, a CLI, and an optional menu
+ bar tray icon. Run `adzan setup` after installing to choose a location.

@@ -1,0 +1,44 @@
+class Adzan < Formula
+  desc "Prayer times and the adhan, in your terminal"
+  homepage "https://github.com/dimasyotama/adzan-cli"
+  version "@VERSION@"
+
+  on_macos do
+    on_arm do
+      url "https://github.com/dimasyotama/adzan-cli/releases/download/v@VERSION@/adzan-@VERSION@-darwin-arm64.tar.gz"
+      sha256 "@SHA_DARWIN_ARM64@"
+    end
+    on_intel do
+      url "https://github.com/dimasyotama/adzan-cli/releases/download/v@VERSION@/adzan-@VERSION@-darwin-amd64.tar.gz"
+      sha256 "@SHA_DARWIN_AMD64@"
+    end
+  end
+
+  on_linux do
+    on_arm do
+      url "https://github.com/dimasyotama/adzan-cli/releases/download/v@VERSION@/adzan-@VERSION@-linux-arm64.tar.gz"
+      sha256 "@SHA_LINUX_ARM64@"
+    end
+    on_intel do
+      url "https://github.com/dimasyotama/adzan-cli/releases/download/v@VERSION@/adzan-@VERSION@-linux-amd64.tar.gz"
+      sha256 "@SHA_LINUX_AMD64@"
+    end
+  end
+
+  def install
+    bin.install "adzan"
+    bin.install "adzand"
+    bin.install "adzantray" if File.exist?("adzantray")
+  end
+
+  service do
+    run [opt_bin/"adzand"]
+    keep_alive successful_exit: false
+    log_path var/"log/adzan.log"
+    error_log_path var/"log/adzan.log"
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/adzan version")
+  end
+end
