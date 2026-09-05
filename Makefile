@@ -7,7 +7,7 @@ GOFLAGS := -trimpath -ldflags "$(LDFLAGS)"
 
 BIN := bin
 
-.PHONY: all build test vet fmt clean install uninstall release size
+.PHONY: all build test vet fmt clean install uninstall release size formula deb dist
 
 all: build
 
@@ -73,9 +73,15 @@ size: build
 	@du -h $(BIN)/adzan $(BIN)/adzand
 
 # Regenerates Formula/adzan.rb from the template, filling in the sha256 of
-# whatever `make release` just built - never hand-edit the checksums, they
+# whatever `make release` already built - never hand-edit the checksums, they
 # only ever come from the tarballs that are actually about to be released.
-formula: release
+# Deliberately does NOT depend on `release`: that target is destructive
+# (rm -rf dist), so running `make deb` and `make formula` as separate `make`
+# invocations after it - the normal way to chain targets - would each
+# re-trigger it and wipe the other's output. Run `make release` yourself
+# first, or use `make dist` to do all three in one invocation.
+formula:
+	@test -f dist/checksums.txt || { echo "dist/checksums.txt not found - run 'make release' first"; exit 1; }
 	@sha() { grep " $$1\$$" dist/checksums.txt | cut -d' ' -f1; }; \
 	sed -e "s/@VERSION@/$(VERSION)/g" \
 	    -e "s/@SHA_DARWIN_ARM64@/$$(sha adzan-$(VERSION)-darwin-arm64.tar.gz)/" \
@@ -88,9 +94,11 @@ formula: release
 # .deb packages for the two Linux release tarballs, using dpkg-deb - the
 # standard tool for this, not hand-rolled. Needs dpkg-deb: present by default
 # on Debian/Ubuntu, `brew install dpkg` gets it on macOS.
-deb: release
+# Deliberately does NOT depend on `release` - see the comment on `formula`.
+deb:
 	@command -v dpkg-deb >/dev/null 2>&1 || { \
 		echo "dpkg-deb not found - run this on Linux, or 'brew install dpkg' here"; exit 1; }
+	@test -f dist/adzan-$(VERSION)-linux-amd64.tar.gz || { echo "dist/adzan-$(VERSION)-linux-amd64.tar.gz not found - run 'make release' first"; exit 1; }
 	@for arch in amd64 arm64; do \
 		root=dist/deb-$$arch; rm -rf $$root; \
 		mkdir -p $$root/usr/bin $$root/DEBIAN; \
@@ -105,3 +113,9 @@ deb: release
 		rm -rf $$root; \
 	done
 	@ls -lh dist/*.deb
+
+# Everything a release needs, in the one order that is safe: release first
+# (it wipes and repopulates dist/), then deb and formula reading from it -
+# all as a single `make` invocation, so `release`'s prerequisite-free target
+# only runs once and nothing gets wiped out from under the others.
+dist: release deb formula

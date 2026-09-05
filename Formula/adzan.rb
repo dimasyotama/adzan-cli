@@ -6,22 +6,22 @@ class Adzan < Formula
   on_macos do
     on_arm do
       url "https://github.com/dimasyotama/adzan-cli/releases/download/v0.1.0/adzan-0.1.0-darwin-arm64.tar.gz"
-      sha256 "8e6ad2ab4a94d72e19e26dd1440308e50c65f8f3d3cef3e22967e388f2d24a78"
+      sha256 "3ff23a711405772c09e8adf83d2135b702f34d464f2a83edfca6eeb31d7e056d"
     end
     on_intel do
       url "https://github.com/dimasyotama/adzan-cli/releases/download/v0.1.0/adzan-0.1.0-darwin-amd64.tar.gz"
-      sha256 "53a011ca702f6c1c88e2dbfd8092234141b6dd745da4024d7bf68bd2e60c0b41"
+      sha256 "b25499b15b9e1b15f64dc08482e6389b8c0a26fdd4395e6cf4537f054ae5e1e5"
     end
   end
 
   on_linux do
     on_arm do
       url "https://github.com/dimasyotama/adzan-cli/releases/download/v0.1.0/adzan-0.1.0-linux-arm64.tar.gz"
-      sha256 "d4fd7c6b9ab73fa26da86927e11d8e2a27258417efdaca23120b7cccde15b19b"
+      sha256 "8b7a49f7395844ec22fa691b5d53d9f8b22832a840c822e7da74147e9a72c6e3"
     end
     on_intel do
       url "https://github.com/dimasyotama/adzan-cli/releases/download/v0.1.0/adzan-0.1.0-linux-amd64.tar.gz"
-      sha256 "057884f3890f3516f429331a15abe4cf3a2003be8f8f5261fe10e4fd212f05aa"
+      sha256 "e8b397cd7c4377eca459e588e05a58a1c78f9704afef90d20f12d788143640bf"
     end
   end
 
