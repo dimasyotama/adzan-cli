@@ -51,11 +51,16 @@ clean:
 # adzantray for darwin and warns, same as before.
 # linux/windows have no such requirement (pure Go, CGO_ENABLED=0 is fine),
 # so they always get it.
-HOST_OS   := $(shell uname -s | tr A-Z a-z | sed 's/darwin/darwin/;s/linux/linux/')
-HOST_ARCH := $(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/amd64/;s/arm64/arm64/')
+HOST_OS   := $(shell uname -s | tr A-Z a-z)
+HOST_ARCH := $(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+
+# TARGETS lets CI split the build across runners (native macOS runners for
+# darwin, so adzantray gets built there too) - defaults to everything, for
+# a plain local `make release`.
+TARGETS ?= linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 release:
 	@rm -rf dist && mkdir -p dist
-	@for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do \
+	@for target in $(TARGETS); do \
 		os=$${target%/*}; arch=$${target#*/}; ext=""; \
 		if [ "$$os" = "windows" ]; then ext=".exe"; fi; \
 		out=dist/adzan-$(VERSION)-$$os-$$arch; \
