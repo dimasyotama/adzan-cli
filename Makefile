@@ -44,10 +44,15 @@ clean:
 	rm -rf $(BIN) dist
 
 # Cross-compiled tarballs for the platforms we support today.
-# adzantray builds everywhere except darwin: on darwin it needs cgo + Cocoa,
-# which needs a native macOS toolchain this cross-compile loop doesn't have.
+# adzantray needs cgo + Cocoa on darwin, which needs a native macOS toolchain
+# this cross-compile loop doesn't have - so for darwin targets it only builds
+# when `make release` itself is run natively on a matching Mac (no GOOS/GOARCH
+# override, just a plain native build). Running it on Linux/CI still skips
+# adzantray for darwin and warns, same as before.
 # linux/windows have no such requirement (pure Go, CGO_ENABLED=0 is fine),
-# so they get it. Add darwin here once this runs on a macOS builder.
+# so they always get it.
+HOST_OS   := $(shell uname -s | tr A-Z a-z | sed 's/darwin/darwin/;s/linux/linux/')
+HOST_ARCH := $(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/amd64/;s/arm64/arm64/')
 release:
 	@rm -rf dist && mkdir -p dist
 	@for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; do \
@@ -59,6 +64,10 @@ release:
 		GOOS=$$os GOARCH=$$arch go build $(GOFLAGS) -o $$out/adzand$$ext ./cmd/adzand || exit 1; \
 		if [ "$$os" != "darwin" ]; then \
 			CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch go build $(GOFLAGS) -o $$out/adzantray$$ext ./cmd/adzantray || exit 1; \
+		elif [ "$(HOST_OS)/$(HOST_ARCH)" = "$$target" ]; then \
+			go build $(GOFLAGS) -o $$out/adzantray ./cmd/adzantray || exit 1; \
+		else \
+			echo "skipping adzantray for $$target - not building natively on a matching Mac"; \
 		fi; \
 		cp README.md $$out/; \
 		tar -czf $$out.tar.gz -C dist $$(basename $$out); \

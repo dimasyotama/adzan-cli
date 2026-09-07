@@ -204,6 +204,11 @@ install_from_release() {
     mkdir -p "$PREFIX/bin"
     install -m 0755 "$_dir/adzan"  "$PREFIX/bin/adzan"
     install -m 0755 "$_dir/adzand" "$PREFIX/bin/adzand"
+    if [ -f "$_dir/adzantray" ]; then
+        install -m 0755 "$_dir/adzantray" "$PREFIX/bin/adzantray"
+    else
+        warn "this release has no adzantray for $OS/$ARCH - 'adzan tray' won't be available (build with --from-source on a Mac with Xcode tools to get it on darwin)"
+    fi
 }
 
 install_from_source() {
@@ -220,6 +225,8 @@ install_from_source() {
         || die "build failed"
     spin "Building adzand" sh -c "cd '$TMP/src' && go build -trimpath -ldflags '-s -w' -o '$PREFIX/bin/adzand' ./cmd/adzand" \
         || die "build failed"
+    spin "Building adzantray" sh -c "cd '$TMP/src' && go build -trimpath -ldflags '-s -w' -o '$PREFIX/bin/adzantray' ./cmd/adzantray" \
+        || warn "adzantray build failed - 'adzan tray' won't be available (on darwin this needs Xcode command line tools for cgo)"
 }
 
 # The two binaries must live together: the CLI looks for the daemon beside itself.
