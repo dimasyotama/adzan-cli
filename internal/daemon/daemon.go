@@ -90,10 +90,18 @@ func (d *Daemon) Run(ctx context.Context) error {
 			return nil
 		}
 
-		// A reload during the sleep means the schedule may have changed, so
-		// only sound the adhan if this event really is due now.
-		if time.Until(next.At) > 30*time.Second {
+		// A reload during the sleep can change the schedule, so re-derive the
+		// next event rather than trusting the one computed before we slept.
+		if fresh, err := d.nextEvent(); err != nil || fresh.Name != next.Name || !fresh.At.Equal(next.At) {
 			continue
+		}
+
+		// The timer can wake slightly early; wait out any remainder so the
+		// adhan never sounds ahead of the actual time.
+		if remaining := time.Until(next.At); remaining > 0 {
+			if stop := d.sleep(ctx, remaining); stop {
+				return nil
+			}
 		}
 		d.announce(next)
 
