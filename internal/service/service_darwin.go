@@ -102,13 +102,34 @@ func disableAgent(label string) error {
 	return nil
 }
 
-// Install writes a launchd user agent pointing at the daemon binary.
+// loadAgent (re)loads a launch agent, so it starts now and again at every
+// future login. bootout-ing first makes this safe to call on a plist that
+// was already loaded (e.g. re-running setup). Both the modern and legacy
+// load syntaxes are tried, since which one works depends on the macOS version.
+func loadAgent(label, path string) error {
+	uid := strconv.Itoa(os.Getuid())
+	_ = exec.Command("launchctl", "bootout", "gui/"+uid+"/"+label).Run()
+	if err := exec.Command("launchctl", "bootstrap", "gui/"+uid, path).Run(); err == nil {
+		return nil
+	}
+	return exec.Command("launchctl", "load", "-w", path).Run()
+}
+
+// Install writes a launchd user agent pointing at the daemon binary and
+// loads it, so it starts now and again on every future login/reboot.
 func Install() (string, error) {
 	bin, err := spawn.FindDaemon()
 	if err != nil {
 		return "", err
 	}
-	return installAgent(daemonLabel, bin)
+	path, err := installAgent(daemonLabel, bin)
+	if err != nil {
+		return "", err
+	}
+	if err := loadAgent(daemonLabel, path); err != nil {
+		return path, fmt.Errorf("wrote %s but could not load it: %w (load manually: launchctl load -w %s)", path, err, path)
+	}
+	return path, nil
 }
 
 // Uninstall removes the agent plist.
@@ -116,11 +137,6 @@ func Uninstall() (string, error) { return uninstallAgent(daemonLabel) }
 
 // Disable unloads the launch agent, best effort.
 func Disable() error { return disableAgent(daemonLabel) }
-
-// PostInstallHint tells the user how to load the agent.
-func PostInstallHint() string {
-	return "Load it with: launchctl load -w ~/Library/LaunchAgents/" + daemonLabel + ".plist"
-}
 
 // InstallTray writes a launchd user agent pointing at the tray binary.
 func InstallTray() (string, error) {

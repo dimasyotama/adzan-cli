@@ -164,12 +164,34 @@ func cmdSetup() error {
 			fmt.Printf("  %s %s\n", ui.Green("OK"), "Running daemon reloaded")
 		}
 	} else {
-		fmt.Printf("\n  Next: %s to run it in the background, then %s\n\n",
-			ui.BoldFG("adzan start"), ui.BoldFG("adzan"))
+		offerAutostart()
+		if !ipc.Running() {
+			fmt.Printf("\n  Next: %s to run it in the background, then %s\n\n",
+				ui.BoldFG("adzan start"), ui.BoldFG("adzan"))
+		}
 	}
 
 	offerTray()
 	return nil
+}
+
+// offerAutostart asks, once, whether to install the login/boot service so
+// the daemon survives reboot without a separate `adzan install` step. Only
+// asked where a service backend actually exists.
+func offerAutostart() {
+	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
+		return
+	}
+	fmt.Println()
+	if !ui.Confirm("Start adzan automatically at login, so it survives reboot?") {
+		return
+	}
+	path, err := service.Install()
+	if err != nil {
+		fmt.Printf("  %s %s\n", ui.Red("!"), err.Error())
+		return
+	}
+	fmt.Printf("  %s %s\n", ui.Green("OK"), "Enabled at login: "+ui.Dim(path))
 }
 
 // offerTray asks, once, whether to show the next prayer in the menu bar /
@@ -300,8 +322,8 @@ func cmdInstallService() error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("  %s %s\n", ui.Green("OK"), "Service installed at "+ui.Dim(path))
-	fmt.Printf("  %s\n", ui.Dim(service.PostInstallHint()))
+	fmt.Printf("  %s %s\n", ui.Green("OK"), "Service installed and enabled at "+ui.Dim(path))
+	fmt.Printf("  %s\n", ui.Dim("It will start now and again on every future login/reboot."))
 	return nil
 }
 

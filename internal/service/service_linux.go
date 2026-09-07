@@ -98,13 +98,37 @@ func disableUnit(name string) error {
 	return nil
 }
 
-// Install writes a systemd user unit pointing at the daemon binary.
+// enableUnit reloads systemd and enables+starts the unit now, so it also
+// comes back on every future login. A missing systemctl (no systemd, a
+// container) means there is nothing to enable, not a failure.
+func enableUnit(name string) error {
+	if _, err := exec.LookPath("systemctl"); err != nil {
+		return nil
+	}
+	if err := exec.Command("systemctl", "--user", "daemon-reload").Run(); err != nil {
+		return fmt.Errorf("systemctl --user daemon-reload: %w", err)
+	}
+	if err := exec.Command("systemctl", "--user", "enable", "--now", name).Run(); err != nil {
+		return fmt.Errorf("systemctl --user enable --now %s: %w", name, err)
+	}
+	return nil
+}
+
+// Install writes a systemd user unit pointing at the daemon binary and
+// enables it, so it starts now and again on every future login/reboot.
 func Install() (string, error) {
 	bin, err := spawn.FindDaemon()
 	if err != nil {
 		return "", err
 	}
-	return installUnit(daemonUnitName, daemonUnitTemplate, bin)
+	path, err := installUnit(daemonUnitName, daemonUnitTemplate, bin)
+	if err != nil {
+		return "", err
+	}
+	if err := enableUnit(daemonUnitName); err != nil {
+		return path, fmt.Errorf("wrote %s but could not enable it: %w (enable manually: systemctl --user daemon-reload && systemctl --user enable --now %s)", path, err, daemonUnitName)
+	}
+	return path, nil
 }
 
 // Uninstall removes the unit file. Stopping it is left to the user so the
@@ -113,11 +137,6 @@ func Uninstall() (string, error) { return uninstallUnit(daemonUnitName) }
 
 // Disable stops and disables the unit, best effort.
 func Disable() error { return disableUnit(daemonUnitName) }
-
-// PostInstallHint tells the user the two commands systemd still needs.
-func PostInstallHint() string {
-	return "Enable it with: systemctl --user daemon-reload && systemctl --user enable --now adzan"
-}
 
 // InstallTray writes a systemd user unit pointing at the tray binary.
 func InstallTray() (string, error) {
