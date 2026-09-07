@@ -6,40 +6,7 @@ A background daemon watches the clock and plays the call to prayer; the CLI
 gives you a live dashboard and the commands to control it. Two static Go
 binaries, no Electron, no Python, no third-party deps.
 
-```
-                    .
-                   /|\
-                  ( o )
-                   \|/
-                    |
-      ___       _________       ___
-     |   |    ,'         ',    |   |
-     | o |   /             \   | o |
-     |___|  |               |  |___|
-     |   |  |    _______    |  |   |
-     |   |  |   /       \   |  |   |
-     |   |  |  |  .   .  |  |  |   |
-   __|___|__|__|_________|__|__|___|__
-  |___________________________________|
-
-  ADZAN   * running
-  -----------------------------------------
-  location   Purwakarta, Indonesia
-  method     Kemenag - Indonesia
-  timezone   Asia/Jakarta
-
-  next       Maghrib  02:14:07
-             at 17:52 today
-
-    Fajr                04:34
-    Sunrise             05:47
-    Dhuhr               11:52
-    Asr                 15:11
-  > Maghrib             17:52
-    Isha                19:01
-
-  adzan stop to silence   adzan mute to stay quiet   ctrl-c to exit
-```
+![adzan dashboard](docs/img/dashboard.png)
 
 ## Install
 
@@ -100,6 +67,14 @@ adzan install   # systemd user unit (Linux) or launchd agent (macOS) -
 | `adzan doctor` | Health check |
 | `adzan update` | Update to latest release |
 | `adzan remove` | Uninstall everything (`--keep-config`, `--yes`) |
+
+`adzan status`:
+
+![adzan status](docs/img/status.png)
+
+`adzan tray install`, in the macOS menu bar:
+
+![adzan tray](docs/img/tray.png)
 
 ## Uninstall
 
