@@ -45,6 +45,10 @@ type Config struct {
 	SoundPath string   `json:"sound_path"`
 	Muted     bool     `json:"muted"`
 
+	// FajrSoundPath, if set, plays instead of SoundPath for Fajr - its adhan
+	// traditionally has different wording ("as-salatu khayrun min an-nawm").
+	FajrSoundPath string `json:"fajr_sound_path,omitempty"`
+
 	// Tune nudges individual prayers by whole minutes, so the computed times
 	// can be lined up exactly with whatever the local mosque announces.
 	// Keys are Fajr, Sunrise, Dhuhr, Asr, Maghrib, Isha.

@@ -409,6 +409,13 @@ func cmdDoctor() error {
 		} else {
 			ok("sound", cfg.SoundPath)
 		}
+		if cfg.FajrSoundPath != "" {
+			if _, serr := os.Stat(cfg.FajrSoundPath); serr != nil {
+				fail("fajr sound", "missing at "+cfg.FajrSoundPath)
+			} else {
+				ok("fajr sound", cfg.FajrSoundPath)
+			}
+		}
 	}
 
 	if ipc.Running() {

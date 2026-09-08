@@ -158,6 +158,9 @@ func (d *Daemon) announce(ev prayer.Event) {
 	d.mu.Lock()
 	muted := d.cfg.Muted
 	sound := d.cfg.SoundPath
+	if ev.Name == "Fajr" && d.cfg.FajrSoundPath != "" {
+		sound = d.cfg.FajrSoundPath
+	}
 	d.mu.Unlock()
 
 	if muted {
