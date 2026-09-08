@@ -1,27 +1,27 @@
 class Adzan < Formula
   desc "Prayer times and the adhan, in your terminal"
   homepage "https://github.com/dimasyotama/adzan-cli"
-  version "0.1.1"
+  version "0.1.2"
 
   on_macos do
     on_arm do
-      url "https://github.com/dimasyotama/adzan-cli/releases/download/v0.1.1/adzan-0.1.1-darwin-arm64.tar.gz"
-      sha256 "cdb5a5d46b16d69ea08afa55a34de6e2c2b7a83e16738aba5b8722ea3cd981e7"
+      url "https://github.com/dimasyotama/adzan-cli/releases/download/v0.1.2/adzan-0.1.2-darwin-arm64.tar.gz"
+      sha256 "6f72bda86fb0dd6794f69eb4ed8c07cd5d935a44cd630f608a1d93cdd623dadc"
     end
     on_intel do
-      url "https://github.com/dimasyotama/adzan-cli/releases/download/v0.1.1/adzan-0.1.1-darwin-amd64.tar.gz"
-      sha256 "20c43983d764fd8ac4f5e3a4c9b19915831f2d034135e4706a97bc624a11de7d"
+      url "https://github.com/dimasyotama/adzan-cli/releases/download/v0.1.2/adzan-0.1.2-darwin-amd64.tar.gz"
+      sha256 "661efabe5614613cc43df535ae1e2c5b9518e24cf56a2f7ba3263072a4511b68"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/dimasyotama/adzan-cli/releases/download/v0.1.1/adzan-0.1.1-linux-arm64.tar.gz"
-      sha256 "6b38950366b3955df5a63468a335a776538b8a50cb8a58e1db2a94013219bb48"
+      url "https://github.com/dimasyotama/adzan-cli/releases/download/v0.1.2/adzan-0.1.2-linux-arm64.tar.gz"
+      sha256 "11e15ea2e6d6fec500583d248aeafac53cbad7b347bfe0dbbd963163baee9694"
     end
     on_intel do
-      url "https://github.com/dimasyotama/adzan-cli/releases/download/v0.1.1/adzan-0.1.1-linux-amd64.tar.gz"
-      sha256 "b422559a099aa923ac6a83cbe0a2c3371ce8315df08f34680dadf5bbdde976d8"
+      url "https://github.com/dimasyotama/adzan-cli/releases/download/v0.1.2/adzan-0.1.2-linux-amd64.tar.gz"
+      sha256 "c1a5afd6b994acfb206e0ec9091080f29f26d83dac6680b69aa288a8698880ce"
     end
   end
 
