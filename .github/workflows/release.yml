@@ -41,16 +41,13 @@ jobs:
           - runner: ubuntu-latest
             targets: "linux/amd64 linux/arm64 windows/amd64"
             name: linux-windows
-          # adzantray needs cgo + Cocoa on darwin, so these two need to run
-          # natively on the matching Mac. macos-13 is Intel, macos-14 is
-          # Apple Silicon - if GitHub retires macos-13, replace it with a
-          # cross build (`CC="clang -arch x86_64"` on a macos-14 runner).
-          - runner: macos-13
-            targets: "darwin/amd64"
-            name: darwin-amd64
+          # adzantray needs cgo + Cocoa on darwin, so this needs an actual
+          # Mac - GitHub only hosts Apple Silicon ones now (macos-13/Intel
+          # was retired), so darwin/amd64 is a clang cross-build from here
+          # (see the Makefile).
           - runner: macos-14
-            targets: "darwin/arm64"
-            name: darwin-arm64
+            targets: "darwin/amd64 darwin/arm64"
+            name: darwin
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v5

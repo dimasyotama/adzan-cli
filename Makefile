@@ -44,19 +44,17 @@ clean:
 	rm -rf $(BIN) dist
 
 # Cross-compiled tarballs for the platforms we support today.
-# adzantray needs cgo + Cocoa on darwin, which needs a native macOS toolchain
-# this cross-compile loop doesn't have - so for darwin targets it only builds
-# when `make release` itself is run natively on a matching Mac (no GOOS/GOARCH
-# override, just a plain native build). Running it on Linux/CI still skips
-# adzantray for darwin and warns, same as before.
+# adzantray needs cgo + Cocoa on darwin. Apple's clang can target either Mac
+# arch from either Mac arch (`-arch x86_64`/`-arch arm64`), so as long as
+# `make release` runs on a Mac at all, it can build adzantray for both darwin
+# arches - it just can't build it anywhere else (no Cocoa toolchain there).
 # linux/windows have no such requirement (pure Go, CGO_ENABLED=0 is fine),
 # so they always get it.
-HOST_OS   := $(shell uname -s | tr A-Z a-z)
-HOST_ARCH := $(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+HOST_OS := $(shell uname -s | tr A-Z a-z)
 
-# TARGETS lets CI split the build across runners (native macOS runners for
-# darwin, so adzantray gets built there too) - defaults to everything, for
-# a plain local `make release`.
+# TARGETS lets CI split the build across runners (a macOS runner for darwin,
+# so adzantray gets built there too) - defaults to everything, for a plain
+# local `make release`.
 TARGETS ?= linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64
 release:
 	@rm -rf dist && mkdir -p dist
@@ -69,10 +67,11 @@ release:
 		GOOS=$$os GOARCH=$$arch go build $(GOFLAGS) -o $$out/adzand$$ext ./cmd/adzand || exit 1; \
 		if [ "$$os" != "darwin" ]; then \
 			CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch go build $(GOFLAGS) -o $$out/adzantray$$ext ./cmd/adzantray || exit 1; \
-		elif [ "$(HOST_OS)/$(HOST_ARCH)" = "$$target" ]; then \
-			go build $(GOFLAGS) -o $$out/adzantray ./cmd/adzantray || exit 1; \
+		elif [ "$(HOST_OS)" = "darwin" ]; then \
+			_cc_arch=$$arch; [ "$$arch" = "amd64" ] && _cc_arch=x86_64; \
+			CGO_ENABLED=1 GOOS=darwin GOARCH=$$arch CC="clang -arch $$_cc_arch" go build $(GOFLAGS) -o $$out/adzantray ./cmd/adzantray || exit 1; \
 		else \
-			echo "skipping adzantray for $$target - not building natively on a matching Mac"; \
+			echo "skipping adzantray for $$target - not building on a Mac"; \
 		fi; \
 		cp README.md $$out/; \
 		tar -czf $$out.tar.gz -C dist $$(basename $$out); \

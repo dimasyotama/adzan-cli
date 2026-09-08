@@ -22,6 +22,23 @@ const (
 
 	// retryInterval applies if a recompute somehow fails.
 	retryInterval = 10 * time.Minute
+
+	// wakeCheckInterval bounds how long any single wait for the next prayer
+	// runs before re-checking the wall clock. A laptop sleeping through the
+	// whole wait can't be trusted to fire a single long timer exactly on
+	// wake - the OS defers/coalesces a background process's timers around a
+	// sleep, which delayed the adhan by several minutes. Polling in short
+	// steps instead means the worst-case lateness is one interval.
+	wakeCheckInterval = 20 * time.Second
+)
+
+// waitResult reports why a wait for the daemon's channels returned.
+type waitResult int
+
+const (
+	waitElapsed waitResult = iota
+	waitReloaded
+	waitStopped
 )
 
 // Daemon owns the schedule, the player, and the command socket.
@@ -79,29 +96,17 @@ func (d *Daemon) Run(ctx context.Context) error {
 			continue
 		}
 
-		delay := time.Until(next.At)
-		if delay < 0 {
-			delay = 0
-		}
 		d.logger.Printf("next prayer: %s at %s (in %s)",
-			next.Name, next.At.Format("15:04"), delay.Round(time.Second))
+			next.Name, next.At.Format("15:04"), time.Until(next.At).Round(time.Second))
 
-		if stop := d.sleep(ctx, delay); stop {
+		stopped, reloaded := d.waitUntil(ctx, next.At)
+		if stopped {
 			return nil
 		}
-
-		// A reload during the sleep can change the schedule, so re-derive the
-		// next event rather than trusting the one computed before we slept.
-		if fresh, err := d.nextEvent(); err != nil || fresh.Name != next.Name || !fresh.At.Equal(next.At) {
+		// A reload during the wait can change the schedule, so re-derive the
+		// next event rather than trusting the one computed before we waited.
+		if reloaded {
 			continue
-		}
-
-		// The timer can wake slightly early; wait out any remainder so the
-		// adhan never sounds ahead of the actual time.
-		if remaining := time.Until(next.At); remaining > 0 {
-			if stop := d.sleep(ctx, remaining); stop {
-				return nil
-			}
 		}
 		d.announce(next)
 
@@ -165,21 +170,47 @@ func (d *Daemon) announce(ev prayer.Event) {
 	}
 }
 
-// sleep waits for d, a reload, a quit, or context cancellation.
-// It reports true when the daemon should shut down.
-func (d *Daemon) sleep(ctx context.Context, wait time.Duration) bool {
-	timer := time.NewTimer(wait)
+// wait blocks for dur, a reload, a quit, or context cancellation, reporting
+// which one interrupted it (or that dur simply elapsed).
+func (d *Daemon) wait(ctx context.Context, dur time.Duration) waitResult {
+	timer := time.NewTimer(dur)
 	defer timer.Stop()
 
 	select {
 	case <-ctx.Done():
-		return true
+		return waitStopped
 	case <-d.quit:
-		return true
+		return waitStopped
 	case <-d.reload:
-		return false
+		return waitReloaded
 	case <-timer.C:
-		return false
+		return waitElapsed
+	}
+}
+
+// sleep waits for dur, a reload, a quit, or context cancellation.
+// It reports true when the daemon should shut down.
+func (d *Daemon) sleep(ctx context.Context, dur time.Duration) bool {
+	return d.wait(ctx, dur) == waitStopped
+}
+
+// waitUntil blocks until target, polling in short steps (see
+// wakeCheckInterval) rather than trusting one long timer across it. It
+// reports true for stopped if the daemon should shut down, and true for
+// reloaded if a reload interrupted the wait (the caller should re-derive
+// the schedule rather than assume target is still correct).
+func (d *Daemon) waitUntil(ctx context.Context, target time.Time) (stopped, reloaded bool) {
+	for {
+		remaining := time.Until(target)
+		if remaining <= 0 {
+			return false, false
+		}
+		switch d.wait(ctx, min(remaining, wakeCheckInterval)) {
+		case waitStopped:
+			return true, false
+		case waitReloaded:
+			return false, true
+		}
 	}
 }
 
