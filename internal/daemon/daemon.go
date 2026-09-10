@@ -108,6 +108,16 @@ func (d *Daemon) Run(ctx context.Context) error {
 		if reloaded {
 			continue
 		}
+		// waitUntil returns as soon as the target has passed, even if the
+		// machine was asleep for the whole wait and woke up well past it -
+		// that's overdue by more than one poll step, not just normal timer
+		// slop, so the prayer was missed: skip the stale announce and let
+		// the next iteration's nextEvent() land on the following prayer.
+		if overdue := time.Since(next.At); overdue > wakeCheckInterval {
+			d.logger.Printf("%s at %s missed (woke up %s late); skipping to next prayer",
+				next.Name, next.At.Format("15:04"), overdue.Round(time.Second))
+			continue
+		}
 		d.announce(next)
 
 		// Move past this event so the loop does not re-fire on the same minute.
